@@ -27,10 +27,10 @@ bool GregorianCalendar::IsLeapYear(int year)
 		return false;
 }
 
+// takes in a  month [1, 12] and year [0, n]
+// and tells you how many days are in that year.
 int GregorianCalendar::DaysInMonth(int month, int year)
 {
-	const int February = 2;
-
 	if (month < 1 || month > 12)
 	{
 		cerr << "DaysInMonth() error: month is out of range" << endl;
@@ -46,9 +46,26 @@ int GregorianCalendar::DaysInMonth(int month, int year)
 	// [January, March, May, July, August, October, December] have 31 days
 	// feb has 28 or 29 days depending on leap year state.
 
+	enum Months { January = 1, February, March, April, May, June, July, August, September,
+				  October, November, December };
+
 	// let's first take care of February. 
 	if (month == February)
+	{
 		return IsLeapYear(year) ? 29 : 28;
+	}
+	else
+	{
+		int ThirtyDayMonths[4] = { April, June, September, November };
+		//int ThirtyOneDayMonths[7] = { January, March, May, July, August, October, December };
 
-	return 0;
+		if (find(ThirtyDayMonths, ThirtyDayMonths + 4, month) != end(ThirtyDayMonths))
+		{
+			return 30;
+		}
+		else 
+			return 31;
+	}
+
+	return -1;
 }

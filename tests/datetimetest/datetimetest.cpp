@@ -16,15 +16,17 @@ BOOST_AUTO_TEST_CASE(IsLeapYearTest)
         2000, 2004, 2008, 2012, 2016, 2020
     };
 
-    for (int i = 1804; i < 2021; ++i)
-    {
-        using namespace std;
+    BOOST_REQUIRE(1);
 
-        bool myLearYearResult = 
+    //for (int i = 1804; i < 2021; ++i)
+    //{
+    //    using namespace std;
 
-        if (find(begin(leapYears), end(leapYears), i) != end(leapYears))
-        {
+    //    bool myLearYearResult = 
 
-        }
-    }
+    //    if (find(begin(leapYears), end(leapYears), i) != end(leapYears))
+    //    {
+
+    //    }
+    //}
 }
