@@ -1,13 +1,10 @@
 // DateTime handles date and time solutions
-// in the mysql format: YYYY-MM-DD hh:mm:ss
+// using the mysql format: YYYY-MM-DD hh:mm:ss and
+// int variables for year, month, day, hour, minute and second.
 // 
-// It can get the current time.
-// it can subtract two times
-
-// what do i do with 
-// bool IsLeapYear(unsigned int year) and
-// int DaysInMonth(int month, int year)
-// where does this belong
+// It can get the current local time.
+// it can subtract two times giving a delta for use with a start time,
+// and eventually a days and hours between two dates.
 #pragma once
 
 #include <string>
@@ -19,20 +16,14 @@ public:
     DateTime();
     // takes in a "YYYY-MM-DD hh:mm:ss" and set's the object's corresponding data.
     DateTime(std::string datetime);
+    DateTime(int year, int month, int day, int hour, int minute, int second);
 
     // set's the date time members to local time. 
     void GetLocalDateTime();
 
     // set object from a mysql date time we set fill our members
-    void Set(std::string datetime);
-    // set object from date PODs
+    void ParseDateTime(const std::string& datetime);
     void Set(int year, int month, int day, int hour, int minute, int second);
-
-    //// returns local datetime in YYYY-MM-DD hh:mm:ss string
-    //std::string GetCurrentDateTime();
-
-    // a - b = c, 'a' is our datetime object and subtrahend is 'b'.
-    DateTime TimeDelta(const DateTime& subtrahend);
 
     // accessors
     int Year() const { return year; }
@@ -40,7 +31,6 @@ public:
     int Day() const { return day; }
 
     int Hour() const { return hour; }
-    // This function promises not to modify the object
     int Minute() const { return minute; }
     int Second() const { return second; }
 
@@ -52,8 +42,9 @@ public:
     void Minute(int minute) { this->minute = minute; }
     void Second(int second) { this->second = second; }
 
-    //// This function promises not to modify the object
+    DateTime operator=(const std::string& datetime);
     DateTime operator-(const DateTime& subtrahend) const;
+    bool operator==(const DateTime & rhs) const;
 
 private:
     int year;
@@ -62,11 +53,8 @@ private:
 
     int hour;
     int minute;
-    int second;
-
-    void ParseDateTime(const std::string& datetime);
+    int second;  
 };
 
-// basically a "viewer" in MVC
+// basically a "viewer" in MVC. Displays our object in the console using text.
 std::ostream& operator<<(std::ostream& os, const DateTime& dt);
-//DateTime operator-(const DateTime& minuend, const DateTime& subtrahend);

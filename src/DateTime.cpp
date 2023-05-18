@@ -1,6 +1,7 @@
 // DateTime is using the winapi for timer stuff, such as 
 // GetLocalTime(SYSTEMTIME)  
 #include "DateTime.h"
+#include "GregorianCalendar.h"
 
 #include <windows.h>
 #include <sstream>
@@ -19,6 +20,17 @@ DateTime::DateTime(string datetime)
 {
     ParseDateTime(datetime);
 }
+
+DateTime::DateTime(int year, int month, int day, int hour, int minute, int second)
+:
+    year(year),
+    month(month),
+    day(day),
+
+    hour(hour),
+    minute(minute),
+    second(second)
+{}
 
 void DateTime::ParseDateTime(const string& datetime)
 {
@@ -62,12 +74,6 @@ void DateTime::GetLocalDateTime()
     Set(st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 }
 
-// from a mysql date time we set fill our members
-void DateTime::Set(std::string datetime)
-{
-    ParseDateTime(datetime);
-}
-
 void DateTime::Set(int year, int month, int day, int hour, int minute, int second)
 {
     Year(year);
@@ -79,83 +85,6 @@ void DateTime::Set(int year, int month, int day, int hour, int minute, int secon
     Second(second);
 }
 
-// returns local datetime in YYYY-MM-DD hh:mm:ss string
-//std::string DateTime::GetCurrentDateTime()
-//{
-//    SYSTEMTIME st = { 0 };
-//    GetLocalTime(&st);
-//
-//    stringstream sstm;
-
-    // the formatting with setfill and setw makes it so the date and time always
-    // has the same length of characters. A date like january will come out
-    // as 1, and we want it to be 01. This wa
-    // y I very easily retrieve the individual
-    // tokens from a date & time string.
-//    sstm << st.wYear << "-" << st.wMonth << "-" << st.wDay << " "
-//        << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
-//    return sstm.str();
-//}
-
-DateTime DateTime::TimeDelta(const DateTime& subtrahend)
-{
-    //DateTime deltaTime(this);
-
-    // The algorithm for the time delta comes from the following table:
-    //   x1 year y1 month z1 day r1 hour s1 minute t1 seconds
-    // - x2 year y2 month z2 day r2 hour s2 minute t2 seconds
-    //
-    // x1 and x2 are current and previous time respectively. same goes for all variables.
-    // 
-    // This is basically a subtraction table and the concept of "borrowing" 
-    // is our solution when the bottom row's index is greater than the corresponding 
-    // top row's index. 
-    //
-    // borrowing means to subtract a unit from the previous index, and add
-    // it's equivalent value to the current index so that subtraction will remain
-    // positive. This keeps our number format in it's usual positive structure
-    // as opposited to a number whose structure allow negative parts.
-    //
-    // the only assumption is that the top number is greater than the bottom number.
-    // this assumption will be asserted during processing.
-    //
-    
-    // check to see if we need to borrow
-    //     current second
-    //   - previous second
-    // ---------------------
-    //if (subtrahend.Second() > this->Second())
-    //{
-    //    currTime.wMinute -= 1;
-    //    currTime.wSecond += 60;
-    //}
-
-    //// check the minutes
-    //if (prevTime.wMinute > currTime.wMinute)
-    //{
-    //    currTime.wHour -= 1;
-    //    currTime.wMinute += 60;
-    //}
-
-    //// check the hours
-    //if (prevTime.wMinute > currTime.wSecond)
-    //{
-    //    currTime.wHour -= 1;
-    //    currTime.wMinute += 60;
-    //}
-
-    //delta.wYear = current.wYear - given.wYear;
-    //delta.wMonth = current.wMonth - given.wMonth;
-    //delta.wDay = current.wDay - given.wDay;
-    //delta.wHour = current.wHour - given.wHour;
-    //delta.wMinute = current.wMinute - given.wMinute;
-    //delta.wSecond = current.wSecond - given.wSecond;
-
-    DateTime dt; 
-    return dt;
-}
-
-// This is like the Viewer in a MVC
 std::ostream& operator<<(std::ostream& os, const DateTime& dt)
 {
     os << dt.Year()  << "-" << dt.Month() << "-" << dt.Day() << " "
@@ -166,32 +95,51 @@ std::ostream& operator<<(std::ostream& os, const DateTime& dt)
 DateTime DateTime::operator-(const DateTime& subtrahend) const
 {
     DateTime minuend(*this);
+    GregorianCalendar gc;
 
-    // check to see if we need to borrow
-    //        minuend: year .. minute second
-    //   - subtrahend: year .. minute second
-    // ---------------------
-    if (subtrahend.second > minuend.second)
-    {
-        minuend.minute -= 1;
-        minuend.second += 60;
-    }
+    // this subtraction algorithm is based on the pen and paper row 
+    // based subtraction procedure(algorithm) we learned in grade school 
+    // for whole numbers where we use borrowing.
 
-    if (subtrahend.minute > minuend.minute)
-    {
-        minuend.hour -= 1;
-        minuend.minute += 60;
-    }
+    // the only difference between integers and YYYY-MM-DD timestamps
+    // is that the month's have different days based on a few simple rules(31, 30, 29 or 28 days).
 
-    if (subtrahend.hour > minuend.hour)
-    {
-        minuend.day -= 1;
-        minuend.hour += 24;
-    }
+    // so when it's time to borrow a month and convert it to days. 
+    // we must look at how many days it would take to get from the previous month to the next 
+    // month. it's that simple. maybe think about it if you want.
 
+    // the only other caveat when running this procedure, just as in integer subtraction,
+    // is that we won't immediately borrow if it makes an element(months in this case) zero. to 
+    // get around this, we for the moment skip borrowing from months and we first borrow from
+    // the years element, which will allow us to then borrow from months without zeroing out the months
+    // element in the minuend row. 
+
+    // here lies the procedure:
+
+    //a = "2019-1-1 0:0:0";
+    //b = "2018-1-2 0:0:0";
+    //Dab = "0-11-30 0:0:0";
     if (subtrahend.day > minuend.day)
     {
-        //?
+        minuend.month--;
+        if (minuend.month == 0)
+        {
+            // the pen and paper algorithm requires us to continue borrowing at this point.
+            // i.e. we're not allowed to make a number zero by borrowing. we must continue
+            // to borrow up the chain.
+
+            minuend.year--;
+            if (subtrahend.year > minuend.year)
+            {
+                cerr << "trying to subtract from a date a date in the future!" << endl;
+                minuend.Set(0, 0, 0, 0, 0, 0);
+                return minuend;
+            }
+
+            minuend.month += 12;
+        }
+        int numberOfdays = gc.DaysInMonth(minuend.month, minuend.year);
+        minuend.day += numberOfdays;
     }
 
     if (subtrahend.month > minuend.month)
@@ -202,10 +150,28 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
 
     if (subtrahend.year > minuend.year)
     {
-        // shit lol :D
+        cerr << "trying to subtract from a date a date in the future!" << endl;
+        minuend.Set(0, 0, 0, 0, 0, 0);
+        return minuend;
     }
 
+    minuend.day   -= subtrahend.day;
+    minuend.month -= subtrahend.month;
+    minuend.year  -= subtrahend.year;
+
     return minuend;
+}
+
+bool DateTime::operator==(const DateTime & rhs) const
+{
+    return    second == rhs.second && minute == rhs.minute && hour == rhs.hour
+           && day == rhs.day && month == rhs.month && year == rhs.year;
+}
+
+DateTime DateTime::operator=(const string& datetime)
+{
+    ParseDateTime(datetime);
+    return *this;
 }
 
 
@@ -215,3 +181,62 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
 //<< setw(2) << st.wDay << " " << setfill('0') << setw(2) << st.wHour << setfill('0')
 //<< setw(2) << st.wMinute;
 //return sstm.str();
+
+
+//DateTime DateTime::TimeDelta(const DateTime& subtrahend)
+//{
+//    //DateTime deltaTime(this);
+//
+//    // The algorithm for the time delta comes from the following table:
+//    //   x1 year y1 month z1 day r1 hour s1 minute t1 seconds
+//    // - x2 year y2 month z2 day r2 hour s2 minute t2 seconds
+//    //
+//    // x1 and x2 are current and previous time respectively. same goes for all variables.
+//    // 
+//    // This is basically a subtraction table and the concept of "borrowing" 
+//    // is our solution when the bottom row's index is greater than the corresponding 
+//    // top row's index. 
+//    //
+//    // borrowing means to subtract a unit from the previous index, and add
+//    // it's equivalent value to the current index so that subtraction will remain
+//    // positive. This keeps our number format in it's usual positive structure
+//    // as opposited to a number whose structure allow negative parts.
+//    //
+//    // the only assumption is that the top number is greater than the bottom number.
+//    // this assumption will be asserted during processing.
+//    //
+//
+//    // check to see if we need to borrow
+//    //     current second
+//    //   - previous second
+//    // ---------------------
+//    //if (subtrahend.Second() > this->Second())
+//    //{
+//    //    currTime.wMinute -= 1;
+//    //    currTime.wSecond += 60;
+//    //}
+//
+//    //// check the minutes
+//    //if (prevTime.wMinute > currTime.wMinute)
+//    //{
+//    //    currTime.wHour -= 1;
+//    //    currTime.wMinute += 60;
+//    //}
+//
+//    //// check the hours
+//    //if (prevTime.wMinute > currTime.wSecond)
+//    //{
+//    //    currTime.wHour -= 1;
+//    //    currTime.wMinute += 60;
+//    //}
+//
+//    //delta.wYear = current.wYear - given.wYear;
+//    //delta.wMonth = current.wMonth - given.wMonth;
+//    //delta.wDay = current.wDay - given.wDay;
+//    //delta.wHour = current.wHour - given.wHour;
+//    //delta.wMinute = current.wMinute - given.wMinute;
+//    //delta.wSecond = current.wSecond - given.wSecond;
+//
+//    DateTime dt;
+//    return dt;
+//}

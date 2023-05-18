@@ -28,7 +28,7 @@ bool GregorianCalendar::IsLeapYear(int year)
 }
 
 // takes in a  month [1, 12] and year [0, n]
-// and tells you how many days are in that year.
+// and tells you how many days are in that Month for that year.
 int GregorianCalendar::DaysInMonth(int month, int year)
 {
 	if (month < 1 || month > 12)
@@ -68,4 +68,18 @@ int GregorianCalendar::DaysInMonth(int month, int year)
 	}
 
 	return -1;
+}
+
+int GregorianCalendar::DaysInYear(int year)
+{
+	if (year < 0)
+	{
+		cerr << "DaysInMonth() error: year is less than zero" << endl;
+		return -1;
+	}
+	
+	if (IsLeapYear(year))
+		return 366;
+	else
+		return 365;
 }

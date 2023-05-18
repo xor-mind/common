@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE Date Time
+#define BOOST_TEST_MODULE GregorianCalendarTest
 #include <boost/test/included/unit_test.hpp>
 #include <algorithm>
 
@@ -67,6 +67,36 @@ BOOST_AUTO_TEST_CASE(TestDaysInMonth)
             else
                 BOOST_REQUIRE(daysInMonth == nonLeapYear[month - 1]);
         }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestDaysInYear)
+{
+    int leapYears[] = {
+        1804, 1808, 1812, 1816, 1820, 1824, 1828, 1832, 1836, 1840, 1844, 1848,
+        1852, 1856, 1860, 1864, 1868, 1872, 1876, 1880, 1884, 1888, 1892, 1896,
+        1904, 1908, 1912, 1916, 1920, 1924, 1928, 1932, 1936, 1940, 1944, 1948,
+        1952, 1956, 1960, 1964, 1968, 1972, 1976, 1980, 1984, 1988, 1992, 1996,
+        2000, 2004, 2008, 2012, 2016, 2020
+    };
+
+    GregorianCalendar gc;
+
+    for (int year = 1804; year < 2021; ++year)
+    {
+        using namespace std;
+
+        int daysInYear = gc.DaysInYear(year);
+
+        // searching our table for year. 
+        if (find(begin(leapYears), end(leapYears), year) != end(leapYears))
+        {
+            // if found. make sure my GregorianCalendar IsLeapYear function also sees 
+            // the year as a leap year.
+            BOOST_REQUIRE(daysInYear == 366);
+        }
+        else
+            BOOST_REQUIRE(daysInYear == 365);
     }
 }
 
