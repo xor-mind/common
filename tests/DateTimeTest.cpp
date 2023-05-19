@@ -5,6 +5,16 @@
 
 BOOST_AUTO_TEST_SUITE(TestDateTime)
 
+BOOST_AUTO_TEST_CASE(TestToString)
+{
+	DateTime a;
+	a = "2019-1-1 0:0:0";
+	std::cout << a.to_string() << std::endl;
+	std::string s = a.to_string();
+	BOOST_REQUIRE(s == "2019-1-1 0:0:0");
+
+}
+
 BOOST_AUTO_TEST_CASE(TestDateSubtraction)
 {
 	// with pen and paper I figured out a bunch of date subtractions(differences)
@@ -40,8 +50,6 @@ BOOST_AUTO_TEST_CASE(TestDateSubtraction)
 	a   = "2019-1-1 0:0:0";
 	b   = "2018-1-2 0:0:0";
 	Dab = "0-11-30 0:0:0";
-	std::cout << "testing " << a << " - " << b << std::endl;
-	std::cout << a - b << std::endl;
 	BOOST_REQUIRE(a - b == Dab);
 }
 

@@ -85,6 +85,14 @@ void DateTime::Set(int year, int month, int day, int hour, int minute, int secon
     Second(second);
 }
 
+std::string DateTime::to_string() const
+{
+    std::ostringstream oss;
+    oss << *this;
+
+    return oss.str();
+}
+
 std::ostream& operator<<(std::ostream& os, const DateTime& dt)
 {
     os << dt.Year()  << "-" << dt.Month() << "-" << dt.Day() << " "
