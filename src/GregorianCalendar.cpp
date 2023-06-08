@@ -5,7 +5,7 @@ using namespace std;
 
 typedef unsigned int uint;
 
-// ad_todo: this should be in a math interface.
+// ad_todo: this should be in a math interface. or maybe, as this definition file only needs this one math function, it's okay to just include it.
 bool Divisible(uint a, uint b)
 {
 	return a % b == 0;

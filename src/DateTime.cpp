@@ -100,8 +100,19 @@ std::ostream& operator<<(std::ostream& os, const DateTime& dt)
     return os;
 }
 
+// returns a TimeDelta. I need to make this officially part of the 
+// interface/implementation. But this isn't a dateTime object. This is a delta.
+// it's different. a date time object can be xxxx-12-31 23:59:59
+// but a delta can never be that. because 12 months based on a delta
+// + initial dateTime, is always goign to be xxxx+1-0-31 23:59:59.
+// hopefully this explains some of the code below.
 DateTime DateTime::operator-(const DateTime& subtrahend) const
 {
+    // ad_todo: implementing the + operator and thinking more about addition/subtraction,
+    // I realize there probably a lot of ways to do this, and certainly better than my current
+    // working but naive approach. this is low priority, but if I ever get time, it might
+    // be great software engineering practice to work on these simple yet important 
+    // algorithms and data structures.
     DateTime minuend(*this);
     GregorianCalendar gc;
 
@@ -114,7 +125,7 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
 
     // so when it's time to borrow a month and convert it to days. 
     // we must look at how many days it would take to get from the previous month to the next 
-    // month. it's that simple. maybe think about it if you want.
+    // month. 
 
     // the only other caveat when running this procedure, just as in integer subtraction,
     // is that we won't immediately borrow if it makes an element(months in this case) zero. to 
@@ -123,6 +134,23 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
     // element in the minuend row. 
 
     // here lies the procedure:
+    if (subtrahend.second > minuend.second)
+    {
+        minuend.minute--;
+        minuend.second += 60;
+    }
+
+    if (subtrahend.minute > minuend.minute)
+    {
+        minuend.hour--;
+        minuend.minute += 60;
+    }
+
+    if (subtrahend.hour > minuend.hour)
+    {
+        minuend.day--;
+        minuend.hour += 24;
+    }
 
     //a = "2019-1-1 0:0:0";
     //b = "2018-1-2 0:0:0";
@@ -130,23 +158,11 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
     if (subtrahend.day > minuend.day)
     {
         minuend.month--;
-        if (minuend.month == 0)
-        {
-            // the pen and paper algorithm requires us to continue borrowing at this point.
-            // i.e. we're not allowed to make a number zero by borrowing. we must continue
-            // to borrow up the chain.
-
-            minuend.year--;
-            if (subtrahend.year > minuend.year)
-            {
-                cerr << "trying to subtract from a date a date in the future!" << endl;
-                minuend.Set(0, 0, 0, 0, 0, 0);
-                return minuend;
-            }
-
-            minuend.month += 12;
-        }
-        int numberOfdays = gc.DaysInMonth(minuend.month, minuend.year);
+        // if the month is zero, it means we're borrowing from December, and we need
+        // we need to figure out how many from the previous month we woul dhave to go trhough
+        // to get to the current minuend's day.
+        int month = (minuend.month == 0 ? 12 : minuend.month);
+        int numberOfdays = gc.DaysInMonth(month, minuend.year);
         minuend.day += numberOfdays;
     }
 
@@ -163,11 +179,104 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
         return minuend;
     }
 
-    minuend.day   -= subtrahend.day;
-    minuend.month -= subtrahend.month;
-    minuend.year  -= subtrahend.year;
+    minuend.second -= subtrahend.second;
+    minuend.minute -= subtrahend.minute;
+    minuend.hour   -= subtrahend.hour;
+    minuend.day    -= subtrahend.day;
+    minuend.month  -= subtrahend.month;
+    minuend.year   -= subtrahend.year;
 
     return minuend;
+}
+
+// this is a date time...
+DateTime DateTime::operator+(const DateTime& addend) const
+{
+    // using a grade school table addition algorithm,
+    // whichs uses the concept of a carry to handle overflow
+    // (.e.g 59 second + 1 second = 1 minute 0 seconds)
+    DateTime augend(*this), sum;
+    GregorianCalendar gc;
+
+    // here lies the procedure:
+    sum.second = augend.second + addend.second;
+    sum.minute = augend.minute + addend.minute;
+    sum.hour   = augend.hour   + addend.hour;
+    sum.day    = augend.day    + addend.day;
+    sum.month  = augend.month  + addend.month;
+    sum.year   = augend.year   + addend.year;
+
+    // there are 6 cases to go through
+    // (1) 
+    
+    if (sum.second >= 60)
+    {
+        // the sum's seconds column can't be larger than 59 seconds by the rules of the 
+        // timestamp(HH:MM:SS). 
+        // after adding the two time stamps, if the seconds column is greater than 59 seconds, 
+        // we will carry over 60 seconds to to the minute column by adding one minute
+        // (which equals 60 seconds) to the time stamp,
+        // and the seconds remainder will be be left in the seconds column. We use the 
+        // modulus operation to figure out that remainder.
+        // .e.g 80 seconds(which > 59 seconds) -> 80 % 60 = 20. Add 1 minute, and now 
+        // we have figured out that 80 seconds = 1 minute and 20 seconds. 
+        int remainder = sum.second % 60; 
+        sum.minute++;
+        sum.second = remainder;
+    }
+
+    // (2)
+    
+    if (sum.minute >= 60)
+    {
+        // as before with the seconds we need to process the minute overflow.
+        // the minutes column must be less than 60
+        int remainder = sum.minute % 60;
+        sum.hour++;
+        sum.minute = remainder;
+    }
+
+    // (3)
+    
+    if (sum.hour >= 24)
+    {
+        // as before with the seconds and minutes columns, we need to process the hour overflow.
+        // the hour column must be less than 24 hours
+        int remainder = sum.hour % 24;
+        sum.day++;
+        sum.hour = remainder;
+    }
+
+    // (4)
+    
+    // figuring out the day column's overflow is a bit tricky as each month has a different
+    // count of days depending the month and there's the possibility of a leap lear.. 
+    int numberOfdays = gc.DaysInMonth(month, sum.year); // AD_TODO: this line maybe wrong, i'll need testing, I don't know if sum.year is right or it should be addend.year, or augend.year
+
+    // AD_TODO: test for leap year additions
+    if (sum.day >= (numberOfdays + 1))
+    {
+        // as before with everything else, we now to need to process the days overflow.
+        // the days must be less than the amount of days in that month + 1, because days
+        // start at 1, not zero, unlike the HH:MM:SS portion of the time stamp.
+        int remainder = sum.day % (numberOfdays + 1);
+        sum.month++;
+        sum.day = remainder + 1;
+    }
+
+    // (5)
+
+    if (sum.month >= 12)
+    {
+        // >= 12 months >= 1 year. must account for this overflow
+        int remainder = sum.month % 12;
+        sum.year++;
+        sum.month = remainder;
+    }
+
+    // (6)
+    // right now, there's no overflow for the year, other than the limits of an int.
+    return sum;
 }
 
 bool DateTime::operator==(const DateTime & rhs) const

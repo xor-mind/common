@@ -5,7 +5,8 @@
 // int variables for year, month, day, hour, minute and second.
 // 
 // It can get the current local time.
-// it can subtract two times giving a delta for use with a epoch(reference point),
+// it can subtract two times giving a delta for use with a user 
+// defined epoch(date-time reference point),
 #pragma once
 
 #include <string>
@@ -47,6 +48,7 @@ public:
 
     DateTime operator=(const std::string& datetime);
     DateTime operator-(const DateTime& subtrahend) const;
+    DateTime operator+(const DateTime& addend) const;
     bool operator==(const DateTime & rhs) const;
 
 private:
