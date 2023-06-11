@@ -17,6 +17,8 @@ BOOST_AUTO_TEST_CASE(TestToString)
 
 BOOST_AUTO_TEST_CASE(TestDateAddition)
 {
+	// every column should be zero unless it's been tested or
+	// being tested. this way I an progressively make sure everything works.
 	DateTime a, b, Sab;
 	// Date Addition Test #1
 	// simple case/test -  no carrying
@@ -107,52 +109,78 @@ BOOST_AUTO_TEST_CASE(TestDateAddition)
 	// carrying test for days
 	{
 		// Test #5 - 1
-		a = "2019-1-31 0:0:0";
-		b = "0-0-1 0:0:0";
+		a   = "2019-1-31 0:0:0";
+		b   = "0-0-1 0:0:0";
 		Sab = "2019-2-1 0:0:0";
 		BOOST_REQUIRE(a + b == Sab);
 
 		// Test #5 - 2
-		a = "2019-2-28 0:0:0";
-		b = "0-0-1 0:0:0";
+		a   = "2019-2-28 0:0:0";
+		b   = "0-0-1 0:0:0";
 		Sab = "2019-3-1 0:0:0";
 		BOOST_REQUIRE(a + b == Sab);
 
-		a = "2019-10-31 0:0:0";
-		b = "0-0-1 0:0:0";
+		a   = "2019-10-31 0:0:0";
+		b   = "0-0-1 0:0:0";
 		Sab = "2019-11-1 0:0:0";
 		BOOST_REQUIRE(a + b == Sab);
 
-		a = "2019-1-31 0:0:0";
-		b = "0-0-31 0:0:0";
-		Sab = "2019-11-1 0:0:0";
-		BOOST_REQUIRE(a + b == Sab);
+		// if all the deltas are from the - operator, there should be no problem.
+		// the edge cases are if there are random deltas.
+		// the - and + operator are assuming legit times, and if that's the case
+		// all the calculations should be good. 
+		// AD_TODO: at some point I'm going to have to examine
+		// the needs of this method or how robust it is.
+		//a = "2019-1-31 0:0:0";
+		//b = "0-0-31 0:0:0";
+		//Sab = "2019-11-1 0:0:0";
+		//BOOST_REQUIRE(a + b == Sab);
 	}
 
 	// Date Addition Test #6
 	// carrying test for months
-	//{
-	//	// Test #6 - 1
-	//	a = "2019-1-31 0:0:0";
-	//	b = "0-0-1 0:0:0";
-	//	Sab = "2019-2-1 0:0:0";
-	//	BOOST_REQUIRE(a + b == Sab);
+	{
+		// Test #6 - 1 - no carrying
+		a   = "2019-2-1 0:0:0";
+		b   = "0-1-0 0:0:0";
+		Sab = "2019-3-1 0:0:0";
+		BOOST_REQUIRE(a + b == Sab);
 
-	//}
-	//
+		// Test #6 - 2 - no carrying
+		a   = "2019-1-1 0:0:0";
+		b   = "0-11-0 0:0:0";
+		Sab = "2019-12-1 0:0:0";
+		BOOST_REQUIRE(a + b == Sab);
 
-	////Date Different Test #3
-	//// testing borrowing of days
-	//a = "0-5-1 0:0:0";
-	//b = "0-1-2 0:0:0";
-	//Dab = "0-3-29 0:0:0";
-	//BOOST_REQUIRE(a - b == Dab);
+		// Test #6 - 3 - carrying
+		a   = "2019-1-1 0:0:0";
+		b   = "0-12-0 0:0:0";
+		Sab = "2020-1-1 0:0:0";
+		BOOST_REQUIRE(a + b == Sab);
+	}
+	
+	// Date Addition Test #7
+	// lots of carrying test
+	{
+		// Test #7 - 1 - simple version of test 7-2
+		a   = "2018-2-5 2:25:43";
+		b   = "0-0-9 22:53:42";
+		Sab = "2018-2-15 1:19:25";
+		BOOST_REQUIRE(a + b == Sab);
+		
+		// Test #7 - 2 - adding day overflow
+		a = "2018-2-5 2:25:43";
+		b = "0-0-0 22:53:42";
+		Sab = "2018-2-6 1:19:25";
+		BOOST_REQUIRE(a + b == Sab);
 
-	////Date Different Test #4
-	//// testing borrowing of days and month
-	//a = "2019-1-1 0:0:0";
-	//b = "2018-1-2 0:0:0";
-	//Dab = "0-11-30 0:0:0";
+		// Test #7 - 3 - adding month overflow
+		a = "2018-2-5 2:25:43";
+		b = "0-10-28 22:53:42";
+		Sab = "2019-1-3 1:19:25";
+		BOOST_REQUIRE(a + b == Sab);
+	}
+
 }
 
 BOOST_AUTO_TEST_CASE(TestDateSubtractionYearMonthDay)
@@ -201,6 +229,8 @@ BOOST_AUTO_TEST_CASE(TestDateSubtractionYearMonthDay)
 	b   = "2018-1-2 0:0:0";
 	Dab = "0-11-30 0:0:0";
 	BOOST_REQUIRE(a - b == Dab);
+
+
 }
 
 BOOST_AUTO_TEST_CASE(TestDateSubtractionHourMinuteSecond)
@@ -238,17 +268,24 @@ BOOST_AUTO_TEST_CASE(TestDateSubtractionHourMinuteSecond)
 	Dab = "0-0-0 23:0:0";
 	BOOST_REQUIRE(a - b == Dab);
 
+	// lots of borrowing #0 - simpler version of #1
+	a = "2019-1-3 0:0:0";
+	b = "2018-2-5 0:0:0";
+	Dab = "0-10-29 0:0:0";
+	BOOST_REQUIRE(a - b == Dab);
+
+	//// Test #7 - 3 - adding month overflow
+	//a = "2018-2-5 2:25:43";
+	//b = "0-10-28 22:53:42";
+	//Sab = "2019-1-3 1:19:25";
+	//BOOST_REQUIRE(a + b == Sab);
+
 	// lots of borrowing #1
 	a = "2019-1-3 1:19:25";
 	b = "2018-2-5 2:25:43";
 	Dab = "0-10-28 22:53:42";
 	BOOST_REQUIRE(a - b == Dab);
 
-	// another test I want
-	a = "2019-5-2 0:0:0";
-	b = "2019-4-2 0:0:0";
-	Dab = "0-1-0 0:0:0";
-	BOOST_REQUIRE(a - b == Dab);
 }
 
 BOOST_AUTO_TEST_CASE(TestOperatorEqual)

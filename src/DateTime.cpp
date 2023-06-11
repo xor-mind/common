@@ -198,13 +198,34 @@ DateTime DateTime::operator+(const DateTime& addend) const
     DateTime augend(*this), sum;
     GregorianCalendar gc;
 
+    // the subtraction function, which is used to create the delta that the inverse subtraction function, i.e.
+    // addition works upon, uses an initial point and end point(being date-times). 
+    // i think of the initial time's day number as a positive integer that has completed that many days of a month. 
+    // i.e. it doesn't matter how far away the IP and EP day positions are year/month wise.
+    // it only matters that for that last EPs month/day, how close is IP day to EP day? at most the IP days will have to cross
+    // into a new month.
+
+    // were not seeing when the days cross at the beginning, but the end. this is why year/mont are added first. 
+    // the days subtraction assume it's the next month.
+    sum.year = augend.year + addend.year;
+    // for now there's no overflow checks for year.
+
+    // month time
+    sum.month = augend.month + addend.month;
+    if (sum.month > 12)
+    {
+        // just like days in a month, months start at 1, not zero.
+        int remainder = sum.month % (12+1);
+        sum.year++;
+        sum.month = remainder + 1;
+    }
+
     // here lies the procedure:
     sum.second = augend.second + addend.second;
     sum.minute = augend.minute + addend.minute;
     sum.hour   = augend.hour   + addend.hour;
     sum.day    = augend.day    + addend.day;
-    sum.month  = augend.month  + addend.month;
-    sum.year   = augend.year   + addend.year;
+
 
     // there are 6 cases to go through
     // (1) 
@@ -247,35 +268,29 @@ DateTime DateTime::operator+(const DateTime& addend) const
         sum.hour = remainder;
     }
 
-    // (4)
-    
-    // figuring out the day column's overflow is a bit tricky as each month has a different
-    // count of days depending the month and there's the possibility of a leap lear.. 
-    int numberOfdays = gc.DaysInMonth(month, sum.year); // AD_TODO: this line maybe wrong, i'll need testing, I don't know if sum.year is right or it should be addend.year, or augend.year
 
-    // AD_TODO: test for leap year additions
-    if (sum.day >= (numberOfdays + 1))
+    // followed next by days
+    int numberOfdays = gc.DaysInMonth(sum.month, sum.year); 
+
+    if (sum.day >= numberOfdays)
     {
         // as before with everything else, we now to need to process the days overflow.
         // the days must be less than the amount of days in that month + 1, because days
         // start at 1, not zero, unlike the HH:MM:SS portion of the time stamp.
-        int remainder = sum.day % (numberOfdays + 1);
+        int remainder = sum.day % numberOfdays ;
         sum.month++;
-        sum.day = remainder + 1;
+        sum.day = remainder;
+
+        // need to month year now
+        if (sum.month > 12)
+        {
+            // just like days in a month, months start at 1, not zero.
+            int remainder = sum.month % (12 + 1);
+            sum.year++;
+            sum.month = remainder + 1;
+        }
     }
-
-    // (5)
-
-    if (sum.month >= 12)
-    {
-        // >= 12 months >= 1 year. must account for this overflow
-        int remainder = sum.month % 12;
-        sum.year++;
-        sum.month = remainder;
-    }
-
-    // (6)
-    // right now, there's no overflow for the year, other than the limits of an int.
+   
     return sum;
 }
 
