@@ -288,11 +288,99 @@ BOOST_AUTO_TEST_CASE(TestDateSubtractionHourMinuteSecond)
 
 }
 
+BOOST_AUTO_TEST_CASE(TestDateNegativeSubstraction)
+{
+	// with pen and paper I figured out a bunch of date subtractions(differences)
+	// and I'm now testing them vs my DateTime object. the basic format is asserting a - b = c
+	// where c is a known difference and a - b are computed by DateTime.
+	DateTime a, b, Dab;
+
+	a = "2019-1-1 2:19:4";
+	b = "2019-1-1 3:20:5";
+	Dab = "-1-11-30 22:58:59";
+	BOOST_REQUIRE(a - b == Dab);
+
+	//// Date Difference Test #2
+	//// testing second borrowing
+	//a = "2019-1-1 0:1:1";
+	//b = "2019-1-1 0:0:59";
+	//Dab = "0-0-0 0:0:2";
+	//BOOST_REQUIRE(a - b == Dab);
+
+	////Date Different Test #3
+	//// testing minute borrowing
+	//a = "2019-1-1 1:1:0";
+	//b = "2019-1-1 0:2:0";
+	//Dab = "0-0-0 0:59:0";
+	//BOOST_REQUIRE(a - b == Dab);
+
+	////Date Different Test #4
+	//// testing hour borrowing
+	//a = "2019-1-2 1:0:0";
+	//b = "2019-1-1 2:0:0";
+	//Dab = "0-0-0 23:0:0";
+	//BOOST_REQUIRE(a - b == Dab);
+
+	//// lots of borrowing #0 - simpler version of #1
+	//a = "2019-1-3 0:0:0";
+	//b = "2018-2-5 0:0:0";
+	//Dab = "0-10-29 0:0:0";
+	//BOOST_REQUIRE(a - b == Dab);
+
+	////// Test #7 - 3 - adding month overflow
+	////a = "2018-2-5 2:25:43";
+	////b = "0-10-28 22:53:42";
+	////Sab = "2019-1-3 1:19:25";
+	////BOOST_REQUIRE(a + b == Sab);
+
+	//// lots of borrowing #1
+	//a = "2019-1-3 1:19:25";
+	//b = "2018-2-5 2:25:43";
+	//Dab = "0-10-28 22:53:42";
+	//BOOST_REQUIRE(a - b == Dab);
+
+}
+
 BOOST_AUTO_TEST_CASE(TestOperatorEqual)
 {
 	DateTime a, b("2018-1-2 21:55:56");
 	a = "2018-1-2 21:55:56";
 	BOOST_REQUIRE(a == b);
+}
+
+BOOST_AUTO_TEST_CASE(TestOperatorPlusPlus)
+{
+	DateTime a, b;
+	{
+		a = "2019-2-28 1:1:1";
+		b = "2019-3-1 1:1:1"; // let Sab = "the sum of dateTime A and delta B" = dateTime
+		a++;
+		BOOST_REQUIRE( a == b);
+	}
+}
+
+BOOST_AUTO_TEST_CASE(TestOperatorLessThan)
+{
+	DateTime a, b("2018-1-2 21:55:56");
+	
+	// Test #7 - 1 - simple version of test 7-2
+	a = "2018-2-15 1:19:25";
+	b = "2018-2-5 2:25:43";
+	BOOST_REQUIRE(b < a);
+	BOOST_REQUIRE(!(a < b));
+}
+
+BOOST_AUTO_TEST_CASE(TestCalenderForloop)
+{
+	DateTime a, b;
+
+	a = "2019-1-1 0:0:0";
+	b = "2018-1-1 0:0:0";
+
+	for (; b < a; b++)
+	{
+		std::cout << b.Date() << std::endl;
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

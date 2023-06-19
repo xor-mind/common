@@ -43,7 +43,18 @@ void DateTime::ParseDateTime(const string& datetime)
 
     // Read year
     getline(ss, token, '-');
+    // the year maybe negative
+    bool negative = false;
+    if (token == "")
+    {
+        negative = true;
+        // read in that the integer
+        getline(ss, token, '-');
+    }
+
     year = stoi(token);
+    if ( negative)
+        year = -year;
 
     // Read month
     getline(ss, token, '-');
@@ -65,6 +76,8 @@ void DateTime::ParseDateTime(const string& datetime)
     getline(ss, token);
     second = stoi(token);
 }
+
+
 
 // set's the date time members to local time. 
 void DateTime::GetLocalDateTime()
@@ -93,6 +106,15 @@ std::string DateTime::to_string() const
     return oss.str();
 }
 
+std::string DateTime::Date() const
+{
+    std::stringstream ss(to_string());
+    std::string date;
+    ss >> date;
+
+    return date;
+}
+
 std::ostream& operator<<(std::ostream& os, const DateTime& dt)
 {
     os << dt.Year()  << "-" << dt.Month() << "-" << dt.Day() << " "
@@ -108,11 +130,6 @@ std::ostream& operator<<(std::ostream& os, const DateTime& dt)
 // hopefully this explains some of the code below.
 DateTime DateTime::operator-(const DateTime& subtrahend) const
 {
-    // ad_todo: implementing the + operator and thinking more about addition/subtraction,
-    // I realize there probably a lot of ways to do this, and certainly better than my current
-    // working but naive approach. this is low priority, but if I ever get time, it might
-    // be great software engineering practice to work on these simple yet important 
-    // algorithms and data structures.
     DateTime minuend(*this);
     GregorianCalendar gc;
 
@@ -123,15 +140,6 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
     // the only difference between integers and YYYY-MM-DD timestamps
     // is that the month's have different days based on a few simple rules(31, 30, 29 or 28 days).
 
-    // so when it's time to borrow a month and convert it to days. 
-    // we must look at how many days it would take to get from the previous month to the next 
-    // month. 
-
-    // the only other caveat when running this procedure, just as in integer subtraction,
-    // is that we won't immediately borrow if it makes an element(months in this case) zero. to 
-    // get around this, we for the moment skip borrowing from months and we first borrow from
-    // the years element, which will allow us to then borrow from months without zeroing out the months
-    // element in the minuend row. 
 
     // here lies the procedure:
     if (subtrahend.second > minuend.second)
@@ -152,14 +160,11 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
         minuend.hour += 24;
     }
 
-    //a = "2019-1-1 0:0:0";
-    //b = "2018-1-2 0:0:0";
-    //Dab = "0-11-30 0:0:0";
     if (subtrahend.day > minuend.day)
     {
         minuend.month--;
         // if the month is zero, it means we're borrowing from December, and we need
-        // we need to figure out how many from the previous month we woul dhave to go trhough
+        // we need to figure out how many days from the previous month we would have to go through
         // to get to the current minuend's day.
         int month = (minuend.month == 0 ? 12 : minuend.month);
         int numberOfdays = gc.DaysInMonth(month, minuend.year);
@@ -172,12 +177,13 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
         minuend.month += 12;
     }
 
-    if (subtrahend.year > minuend.year)
-    {
-        cerr << "trying to subtract from a date a date in the future!" << endl;
-        minuend.Set(0, 0, 0, 0, 0, 0);
-        return minuend;
-    }
+    // it's okay if it's negative
+    //if (subtrahend.year > minuend.year)
+    //{
+    //    cerr << "trying to subtract from a date a date in the future!" << endl;
+    //    minuend.Set(0, 0, 0, 0, 0, 0);
+    //    return minuend;
+    //}
 
     minuend.second -= subtrahend.second;
     minuend.minute -= subtrahend.minute;
@@ -189,7 +195,26 @@ DateTime DateTime::operator-(const DateTime& subtrahend) const
     return minuend;
 }
 
-// this is a date time...
+//// this is a date time...
+// wait a minute, I"m drunk, and ++ doesn't mean anything. am incrementing hours, minutes, milliseconds? lol
+// we'll do days simply to make it easier to increment throughout months in for loops. 
+// this is pretty specific code though and is kinda abusing the what ++ means for a datetime.
+// semantics abuse? 
+DateTime DateTime::operator++(int)
+{
+    // we need to return a copy because the post-increment operator
+    // only mutates the object after the object get's used in the current line of
+    // of code, or something like that.
+    DateTime dt(*this);
+
+    // add one day
+    DateTime b("0-0-1 0:0:0");
+    *this = *this + b;
+
+
+    return dt;
+}
+
 DateTime DateTime::operator+(const DateTime& addend) const
 {
     // using a grade school table addition algorithm,
@@ -272,16 +297,16 @@ DateTime DateTime::operator+(const DateTime& addend) const
     // followed next by days
     int numberOfdays = gc.DaysInMonth(sum.month, sum.year); 
 
-    if (sum.day >= numberOfdays)
+    if (sum.day > numberOfdays)
     {
         // as before with everything else, we now to need to process the days overflow.
         // the days must be less than the amount of days in that month + 1, because days
         // start at 1, not zero, unlike the HH:MM:SS portion of the time stamp.
         int remainder = sum.day % numberOfdays ;
         sum.month++;
-        sum.day = remainder;
+        sum.day = remainder; // normalize from [0, days - 1] to [
 
-        // need to month year now
+        // need to check year now
         if (sum.month > 12)
         {
             // just like days in a month, months start at 1, not zero.
@@ -300,12 +325,27 @@ bool DateTime::operator==(const DateTime & rhs) const
            && day == rhs.day && month == rhs.month && year == rhs.year;
 }
 
+bool DateTime::operator<(const DateTime& rhs) const
+{
+    DateTime delta = rhs - *this;
+
+    if (delta.Year() >= 0 && !delta.IsZero())
+        return true;
+    else
+        return false;
+}
+
 DateTime DateTime::operator=(const string& datetime)
 {
     ParseDateTime(datetime);
     return *this;
 }
 
+bool DateTime::IsZero() const
+{
+    return    second == 0 && minute == 0 && hour == 0
+        && day == 0 && month == 0 && year == 0;
+}
 
 // misc notes/code
 //a format i like

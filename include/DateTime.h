@@ -44,12 +44,18 @@ public:
     void Minute(int minute) { this->minute = minute; }
     void Second(int second) { this->second = second; }
 
+    std::string Date() const; // return the Date portion of the date time.
     std::string to_string() const;
+    bool IsZero() const; // returns true if the object is zero'd out.
 
     DateTime operator=(const std::string& datetime);
     DateTime operator-(const DateTime& subtrahend) const;
     DateTime operator+(const DateTime& addend) const;
+    DateTime operator++(int); // adds 1 day to the date
+    
+    // conditionals
     bool operator==(const DateTime & rhs) const;
+    bool operator<(const DateTime& rhs) const;
 
 private:
     int year;
