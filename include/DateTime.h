@@ -7,6 +7,12 @@
 // It can get the current local time.
 // it can subtract two times giving a delta for use with a user 
 // defined epoch(date-time reference point),
+
+/*
+todo:
+
+create a time delta class. it will make everything more clear.
+*/
 #pragma once
 
 #include <string>
@@ -43,6 +49,10 @@ public:
     void Hour(int hour) { this->hour = hour; }
     void Minute(int minute) { this->minute = minute; }
     void Second(int second) { this->second = second; }
+
+    int ToDays(const DateTime& initialDateTime); // converts a time delta(Y:M:D assuming it's this object) from an initial datetime to days. i.e. this converts years and months to days.
+
+    DateTime Time() const; // returns a DateTime object with just the time portion. 
 
     std::string Date() const; // return the Date portion of the date time.
     std::string to_string() const;

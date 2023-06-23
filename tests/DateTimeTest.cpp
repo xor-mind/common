@@ -370,17 +370,103 @@ BOOST_AUTO_TEST_CASE(TestOperatorLessThan)
 	BOOST_REQUIRE(!(a < b));
 }
 
-BOOST_AUTO_TEST_CASE(TestCalenderForloop)
+BOOST_AUTO_TEST_CASE(TestToDays)
 {
-	DateTime a, b;
+	DateTime end, initial, delta;
+	int days = 0;
 
-	a = "2019-1-1 0:0:0";
-	b = "2018-1-1 0:0:0";
+	// test 0 days
+	end = "2019-1-1 3:20:5";
+	initial = "2019-1-1 2:19:4";
+	delta = end - initial;
+	days = delta.ToDays(initial);
+	BOOST_REQUIRE(days == 0);
 
-	for (; b < a; b++)
-	{
-		std::cout << b.Date() << std::endl;
-	}
+	// test 1 days
+	end = "2019-1-2 0:1:1";
+	initial = "2019-1-1 0:0:59";
+	delta = end - initial;
+	days = delta.ToDays(initial);
+	BOOST_REQUIRE(days == 1);
+
+	// test 31 days
+	end = "2019-2-1 1:1:0";
+	initial = "2019-1-1 0:2:0";
+	delta = end - initial;
+	days = delta.ToDays(initial);
+	BOOST_REQUIRE(days == 31);
+
+	// test 31 days
+	end = "2019-2-1 1:1:0";
+	initial = "2019-1-1 0:2:0";
+	delta = end - initial;
+	days = delta.ToDays(initial);
+	BOOST_REQUIRE(days == 31);
+
+	//31 28 31 30 31 30 
+	// test 6 months;
+	end = "2019-7-1 1:1:0";
+	initial = "2019-1-1 0:2:0";
+	delta = end - initial;
+	days = delta.ToDays(initial);
+	BOOST_REQUIRE(days == 181);
+
+	// test a year
+	end = "2020-1-1 1:1:0";
+	initial = "2019-1-1 0:2:0";
+	delta = end - initial;
+	days = delta.ToDays(initial);
+	BOOST_REQUIRE(days == 365);
+
+	//DateTime a("2021-1-1 0:0:0");
+	//DateTime b("2018-1-1 0:0:0");
+
+	//for (int i =0; b < a; b++, i++)
+	//{
+	//	
+	//}
+
+	//end = "2019-1-3 0:0:0";
+	//initial = "2018-2-5 0:0:0";
+
+	//end = "2019-1-3 1:19:25";
+	//initial = "2018-2-5 2:25:43";
 }
+//BOOST_AUTO_TEST_CASE(TestCalenderForloop)
+//{
+	//DateTime a, b;
+
+	//a = "2021-1-1 0:0:0";
+	//b = "2018-1-1 0:0:0";
+
+	//for (; b < a; b++)
+	//{
+	//	std::cout << b.Date() << std::endl;
+	//}
+//}
+
+BOOST_AUTO_TEST_CASE(TestTime)
+{
+	DateTime a, b, c;
+
+	a = "2021-1-1 6:43:3";
+	b = "2018-1-1 11:7:37";
+
+	BOOST_REQUIRE(a.Time().to_string() == "0-0-0 6:43:3");
+	BOOST_REQUIRE(b.Time().to_string() == "0-0-0 11:7:37");
+	
+	a = "2021-1-2 0:0:0";
+	b = "2021-1-1 23:59:59";
+	DateTime delta = a - b;
+
+	b = b.Time();
+	delta = delta.Time();
+	c = b + delta;
+	
+	BOOST_REQUIRE(c.to_string() == "0-0-1 0:0:0");
+	BOOST_REQUIRE(c.Day() == 1);
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()

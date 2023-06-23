@@ -295,27 +295,34 @@ DateTime DateTime::operator+(const DateTime& addend) const
 
 
     // followed next by days
-    int numberOfdays = gc.DaysInMonth(sum.month, sum.year); 
-
-    if (sum.day > numberOfdays)
+    // 
+    // ad_hack: i really need time deltas, and since I don't have
+    // them yet, and I have no way of telling whether the parameters are
+    // datetimes or not, the best I can do is see if the year is
+    // at least zero... 
+    if (sum.year != 0)
     {
-        // as before with everything else, we now to need to process the days overflow.
-        // the days must be less than the amount of days in that month + 1, because days
-        // start at 1, not zero, unlike the HH:MM:SS portion of the time stamp.
-        int remainder = sum.day % numberOfdays ;
-        sum.month++;
-        sum.day = remainder; // normalize from [0, days - 1] to [
+        int numberOfdays = gc.DaysInMonth(sum.month, sum.year);
 
-        // need to check year now
-        if (sum.month > 12)
+        if (sum.day > numberOfdays)
         {
-            // just like days in a month, months start at 1, not zero.
-            int remainder = sum.month % (12 + 1);
-            sum.year++;
-            sum.month = remainder + 1;
+            // as before with everything else, we now to need to process the days overflow.
+            // the days must be less than the amount of days in that month + 1, because days
+            // start at 1, not zero, unlike the HH:MM:SS portion of the time stamp.
+            int remainder = sum.day % numberOfdays;
+            sum.month++;
+            sum.day = remainder; // normalize from [0, days - 1] to [
+
+            // need to check year now
+            if (sum.month > 12)
+            {
+                // just like days in a month, months start at 1, not zero.
+                int remainder = sum.month % (12 + 1);
+                sum.year++;
+                sum.month = remainder + 1;
+            }
         }
     }
-   
     return sum;
 }
 
@@ -347,6 +354,38 @@ bool DateTime::IsZero() const
         && day == 0 && month == 0 && year == 0;
 }
 
+int DateTime::ToDays(const DateTime& initial)
+{
+    GregorianCalendar gc;
+
+    int totalDays = 0;
+    for (int i = 0; i < year; i++)
+    {
+        totalDays += gc.DaysInYear(initial.year + i);
+    }
+
+    for (int i = 0; i < month; i++)
+    {
+        totalDays += gc.DaysInMonth(initial.month + i, initial.year + year);
+    }
+
+    totalDays += day;
+
+    return totalDays;
+}
+
+DateTime DateTime::Time() const
+{
+    DateTime time(*this);
+
+    time.year = 0;
+    time.month = 0;
+    time.day = 0;
+
+    return time;
+}
+
+
 // misc notes/code
 //a format i like
 //sstm << st.wYear << "_" << setfill('0') << setw(2) << st.wMonth << "_" << setfill('0')
@@ -354,61 +393,3 @@ bool DateTime::IsZero() const
 //<< setw(2) << st.wMinute;
 //return sstm.str();
 
-
-//DateTime DateTime::TimeDelta(const DateTime& subtrahend)
-//{
-//    //DateTime deltaTime(this);
-//
-//    // The algorithm for the time delta comes from the following table:
-//    //   x1 year y1 month z1 day r1 hour s1 minute t1 seconds
-//    // - x2 year y2 month z2 day r2 hour s2 minute t2 seconds
-//    //
-//    // x1 and x2 are current and previous time respectively. same goes for all variables.
-//    // 
-//    // This is basically a subtraction table and the concept of "borrowing" 
-//    // is our solution when the bottom row's index is greater than the corresponding 
-//    // top row's index. 
-//    //
-//    // borrowing means to subtract a unit from the previous index, and add
-//    // it's equivalent value to the current index so that subtraction will remain
-//    // positive. This keeps our number format in it's usual positive structure
-//    // as opposited to a number whose structure allow negative parts.
-//    //
-//    // the only assumption is that the top number is greater than the bottom number.
-//    // this assumption will be asserted during processing.
-//    //
-//
-//    // check to see if we need to borrow
-//    //     current second
-//    //   - previous second
-//    // ---------------------
-//    //if (subtrahend.Second() > this->Second())
-//    //{
-//    //    currTime.wMinute -= 1;
-//    //    currTime.wSecond += 60;
-//    //}
-//
-//    //// check the minutes
-//    //if (prevTime.wMinute > currTime.wMinute)
-//    //{
-//    //    currTime.wHour -= 1;
-//    //    currTime.wMinute += 60;
-//    //}
-//
-//    //// check the hours
-//    //if (prevTime.wMinute > currTime.wSecond)
-//    //{
-//    //    currTime.wHour -= 1;
-//    //    currTime.wMinute += 60;
-//    //}
-//
-//    //delta.wYear = current.wYear - given.wYear;
-//    //delta.wMonth = current.wMonth - given.wMonth;
-//    //delta.wDay = current.wDay - given.wDay;
-//    //delta.wHour = current.wHour - given.wHour;
-//    //delta.wMinute = current.wMinute - given.wMinute;
-//    //delta.wSecond = current.wSecond - given.wSecond;
-//
-//    DateTime dt;
-//    return dt;
-//}
