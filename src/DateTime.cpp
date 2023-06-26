@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
+#include <regex>
 
 using namespace std;
 
@@ -18,7 +19,7 @@ DateTime::DateTime()
 
 DateTime::DateTime(string datetime)
 {
-    ParseDateTime(datetime);
+    FromString(datetime);
 }
 
 DateTime::DateTime(int year, int month, int day, int hour, int minute, int second)
@@ -32,49 +33,29 @@ DateTime::DateTime(int year, int month, int day, int hour, int minute, int secon
     second(second)
 {}
 
-void DateTime::ParseDateTime(const string& datetime)
+void DateTime::FromString(const string& datetime)
 {
-    // ad_todo: add error handling!
-
-    istringstream ss(datetime);
-    string token;
-
-    // ad_style: I tried while loops but the below code feels cleaner.
-
-    // Read year
-    getline(ss, token, '-');
-    // the year maybe negative
-    bool negative = false;
-    if (token == "")
+    if (datetime.empty())
     {
-        negative = true;
-        // read in that the integer
-        getline(ss, token, '-');
+        throw std::invalid_argument("datetime string is empty");
     }
 
-    year = stoi(token);
-    if ( negative)
-        year = -year;
+    std::regex pattern("^(-?\\d+)-(\\d+)-(\\d+) (\\d+):(\\d+):(\\d+)$");
+    std::smatch match;
 
-    // Read month
-    getline(ss, token, '-');
-    month = stoi(token);
-
-    // Read day
-    getline(ss, token, ' ');
-    day = stoi(token);
-
-    // Read Hour
-    getline(ss, token, ':');
-    hour = stoi(token);
-
-    // Read minute
-    getline(ss, token, ':');
-    minute = stoi(token);
-
-    // Read second
-    getline(ss, token);
-    second = stoi(token);
+    if (std::regex_match(datetime, match, pattern))
+    {
+        year = std::stoi(match[1]);
+        month = std::stoi(match[2]);
+        day = std::stoi(match[3]);
+        hour = std::stoi(match[4]);
+        minute = std::stoi(match[5]);
+        second = std::stoi(match[6]);
+    }
+    else
+    {
+        throw std::invalid_argument("datetime string is not in the correct format");
+    }
 }
 
 
@@ -98,7 +79,7 @@ void DateTime::Set(int year, int month, int day, int hour, int minute, int secon
     Second(second);
 }
 
-std::string DateTime::to_string() const
+std::string DateTime::ToString() const
 {
     std::ostringstream oss;
     oss << *this;
@@ -108,7 +89,7 @@ std::string DateTime::to_string() const
 
 std::string DateTime::Date() const
 {
-    std::stringstream ss(to_string());
+    std::stringstream ss(ToString());
     std::string date;
     ss >> date;
 
@@ -344,7 +325,7 @@ bool DateTime::operator<(const DateTime& rhs) const
 
 DateTime DateTime::operator=(const string& datetime)
 {
-    ParseDateTime(datetime);
+    FromString(datetime);
     return *this;
 }
 

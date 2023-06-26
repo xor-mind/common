@@ -30,7 +30,6 @@ public:
     void GetLocalDateTime();
 
     // set object from a mysql date time we set fill our members
-    void ParseDateTime(const std::string& datetime);
     void Set(int year, int month, int day, int hour, int minute, int second);
 
     // accessors
@@ -55,7 +54,10 @@ public:
     DateTime Time() const; // returns a DateTime object with just the time portion. 
 
     std::string Date() const; // return the Date portion of the date time.
-    std::string to_string() const;
+    
+    void FromString(const std::string& datetime);
+    std::string ToString() const;
+
     bool IsZero() const; // returns true if the object is zero'd out.
 
     DateTime operator=(const std::string& datetime);
